@@ -31,9 +31,15 @@
             margin-right: 10px;
         }
 
+        #metronome_tempo-slider {
+            width: 500px;
+        }
+
         #metronome_tempo-display,
         #metronome_time-signature-display {
             margin-left: 5px;
+            display: inline-block;
+            width: 50px;
         }
 
         #metronome_start-stop-button {
@@ -62,10 +68,21 @@
                 <label for="metronome_tempo-slider">Tempo (BPM):</label>
                 <div class="metronome_tempo-buttons">
                     <button id="metronome_tempo-minus">-</button>
-                    <input type="range" id="metronome_tempo-slider" min="5" max="360" value="120">
+                    <input type="range" id="metronome_tempo-slider" min="5" max="360" value="120" list="tempoOptions">
                     <button id="metronome_tempo-plus">+</button>
                 </div>
                 <span id="metronome_tempo-display">120</span>
+                <datalist id="tempoOptions">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="60">60</option>
+                    <option value="80">80</option>
+                    <option value="90">90</option>
+                    <option value="100">100</option>
+                    <option value="120">120</option>
+                    <option value="360">360</option>
+                </datalist>
             </div>
             <div class="metronome_control-row">
                 <label for="metronome_time-signature-numerator">Time Signature:</label>
