@@ -1,0 +1,1 @@
+//write functions like debounce, throttle, wakelock, precache (images, js files, css files or complex resource like an entire page)

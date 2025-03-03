@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Music</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #metronome_controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .metronome_control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .metronome_control-row label {
+            margin-right: 10px;
+        }
+
+        #metronome_tempo-display,
+        #metronome_time-signature-display {
+            margin-left: 5px;
+        }
+
+        #metronome_start-stop-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #metronome_click-sounds-input {
+            display: none;
+        }
+
+        #metronome_click-sounds-label {
+            cursor: pointer;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="metronome_app">
+        <div id="metronome_controls">
+            <div class="metronome_control-row">
+                <label for="metronome_tempo-slider">Tempo (BPM):</label>
+                <div class="metronome_tempo-buttons">
+                    <button id="metronome_tempo-minus">-</button>
+                    <input type="range" id="metronome_tempo-slider" min="5" max="360" value="120">
+                    <button id="metronome_tempo-plus">+</button>
+                </div>
+                <span id="metronome_tempo-display">120</span>
+            </div>
+            <div class="metronome_control-row">
+                <label for="metronome_time-signature-numerator">Time Signature:</label>
+                <input type="number" id="metronome_time-signature-numerator" min="1" max="16" value="4"> /
+                <input type="number" id="metronome_time-signature-denominator" min="1" max="16" value="4">
+            </div>
+            <div class="metronome_control-row">
+                <label for="metronome_use-generated-sounds">Use Generated Sounds:</label>
+                <input type="checkbox" id="metronome_use-generated-sounds">
+            </div>
+            <div class="metronome_control-row">
+                <label for="metronome_click-sounds-input">Click Sounds:</label>
+                <input type="file" id="metronome_click-sounds-input" multiple accept="audio/*">
+                <label id="metronome_click-sounds-label" for="metronome_click-sounds-input">Choose Files</label>
+            </div>
+        </div>
+        <button id="metronome_start-stop-button">Start</button>
+    </div>
+
+    <button onclick="generateClicks()">Clicks</button>
+
+    <script type="text/javascript" src="framework/js/lib.js"></script>
+    <script type="text/javascript" src="framework/js/stateManager.js"></script>
+    <script type="text/javascript" src="framework/js/router.js"></script>
+
+    <script type="text/javascript" src="components/metronome/js/clickGenerator.js"></script>
+    <script type="text/javascript" src="components/metronome/js/main.js?v=13"></script>
+    <script type="text/javascript">
+        function generateClicks() {
+            console.log("click")
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            ClickSoundGenerator.init(audioContext);
+
+            // Create a specific click sound:
+            const customClick = ClickSoundGenerator.createClick(880, 0.1, 0.5);
+            ClickSoundGenerator.playClick(customClick, audioContext.currentTime + 1); // Play it after 1 second
+
+            // Generate and store random click sounds:
+            ClickSoundGenerator.random(4, 440, 1760, 0.05, 0.15, 0.3, 0.7);
+
+            // Play random sounds
+            ClickSoundGenerator.playClick(ClickSoundGenerator.getBuffer(1), audioContext.currentTime + 2);
+            ClickSoundGenerator.playClick(ClickSoundGenerator.getBuffer(2), audioContext.currentTime + 3);
+            ClickSoundGenerator.playClick(ClickSoundGenerator.getBuffer(3), audioContext.currentTime + 4);
+            ClickSoundGenerator.playClick(ClickSoundGenerator.getBuffer(4), audioContext.currentTime + 5);
+        }
+
+        function startMetronome() {
+            console.log("metronome");
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            ClickSoundGenerator.init(audioContext);
+
+            Metronome.start({
+                tempo: 120,
+                timeSignature: [4, 4],
+                clickSounds: { 1: '/components/metronome/assets/hi_click.wav', 2: '/components/metronome/assets/lo_click.wav', 3: '/components/metronome/assets/lo_click.wav', 4: '/components/metronome/assets/lo_click.wav' },
+                audioContext: audioContext,
+            });
+
+            Metronome.on("beat", (e) => console.log(e))
+            setTimeout(() => {
+                Metronome.stop();
+                Metronome.useGeneratedClickSounds();
+                Metronome.start({ timeSignature: [4, 4], audioContext: audioContext });
+            }, 5000)
+        }
+
+        const tempoSlider = document.getElementById('metronome_tempo-slider');
+        const tempoDisplay = document.getElementById('metronome_tempo-display');
+        const timeSignatureNumerator = document.getElementById('metronome_time-signature-numerator');
+        const timeSignatureDenominator = document.getElementById('metronome_time-signature-denominator');
+        const useGeneratedSoundsCheckbox = document.getElementById('metronome_use-generated-sounds');
+        const clickSoundsInput = document.getElementById('metronome_click-sounds-input');
+        const startStopButton = document.getElementById('metronome_start-stop-button');
+        const tempoMinusButton = document.getElementById('metronome_tempo-minus');
+        const tempoPlusButton = document.getElementById('metronome_tempo-plus');
+
+        tempoSlider.addEventListener('input', () => {
+            tempoDisplay.textContent = tempoSlider.value;
+            Metronome.setTempo(parseInt(tempoSlider.value));
+        });
+        tempoMinusButton.addEventListener('click', () => {
+            let newTempo = parseInt(tempoSlider.value) - 1;
+            if (newTempo < parseInt(tempoSlider.min)) {
+                newTempo = parseInt(tempoSlider.min);
+            }
+            tempoSlider.value = newTempo;
+            tempoDisplay.textContent = newTempo;
+            Metronome.setTempo(newTempo);
+        });
+
+        tempoPlusButton.addEventListener('click', () => {
+            let newTempo = parseInt(tempoSlider.value) + 1;
+            if (newTempo > parseInt(tempoSlider.max)) {
+                newTempo = parseInt(tempoSlider.max);
+            }
+            tempoSlider.value = newTempo;
+            tempoDisplay.textContent = newTempo;
+            Metronome.setTempo(newTempo);
+        });
+
+        timeSignatureNumerator.addEventListener('change', () => {
+            updateTimeSignature();
+        });
+
+        timeSignatureDenominator.addEventListener('change', () => {
+            updateTimeSignature();
+        });
+
+        function updateTimeSignature() {
+            const numerator = parseInt(timeSignatureNumerator.value);
+            const denominator = parseInt(timeSignatureDenominator.value);
+            Metronome.setTimeSignature([numerator, denominator]);
+        }
+
+        useGeneratedSoundsCheckbox.addEventListener('change', () => {
+            if (useGeneratedSoundsCheckbox.checked) {
+                Metronome.useGeneratedClickSounds();
+            } else {
+                loadUserSounds();
+            }
+        });
+
+        clickSoundsInput.addEventListener('change', (event) => {
+            loadUserSounds();
+        });
+
+        function loadUserSounds() {
+            if (!useGeneratedSoundsCheckbox.checked && clickSoundsInput.files.length > 0) {
+                const clickSounds = {};
+                const files = clickSoundsInput.files;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        clickSounds[i + 1] = e.target.result;
+                        if (Object.keys(clickSounds).length === files.length) {
+                            Metronome.setClickSounds(clickSounds);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        startStopButton.addEventListener('click', () => {
+            if (startStopButton.textContent === 'Start') {
+                startStopButton.textContent = 'Stop';
+                if (useGeneratedSoundsCheckbox.checked) {
+                    Metronome.start();
+                } else {
+                    //loadUserSounds();
+                    Metronome.setClickSounds({ 1: '/components/metronome/assets/hi_click.wav', 2: '/components/metronome/assets/lo_click.wav', 3: '/components/metronome/assets/lo_click.wav', 4: '/components/metronome/assets/lo_click.wav' });
+                    Metronome.start();
+                }
+
+            } else {
+                startStopButton.textContent = 'Start';
+                Metronome.stop();
+            }
+        });
+    </script>
+</body>
+
+</html>
